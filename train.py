@@ -76,7 +76,7 @@ def bi_train(model, label_loader, unlabeled_loader, val_loader, test_loader, opt
     test_acc = 0.0
     iteration = 0
 
-    optimizer_wnet = torch.optim.Adam(wnet.params(), lr=3e-4)
+    optimizer_wnet = torch.optim.Adam(wnet.params(), lr=3e-4) # the optimization parameter need to be carefully tuned for different settings
 
     for l_data, u_data in zip(label_loader, unlabeled_loader):
 
