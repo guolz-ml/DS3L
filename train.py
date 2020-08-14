@@ -30,6 +30,7 @@ parser.add_argument('--lr_decay_iter', type=int, default=400000)
 parser.add_argument('--lr_decay_factor', type=float, default=0.2)
 parser.add_argument('--warmup', type=int, default=200000)
 parser.add_argument('--meta_lr', type=float, default=0.001)
+parser.add_argument('--lr_wnet', type=float, default=0.001) # this parameter need to be carefully tuned for different settings
 
 #dataset
 parser.add_argument('--dataset', default='MNIST')
@@ -76,7 +77,7 @@ def bi_train(model, label_loader, unlabeled_loader, val_loader, test_loader, opt
     test_acc = 0.0
     iteration = 0
 
-    optimizer_wnet = torch.optim.Adam(wnet.params(), lr=3e-4) # the optimization parameter need to be carefully tuned for different settings
+    optimizer_wnet = torch.optim.Adam(wnet.params(), lr=args.lr_wnet)
 
     for l_data, u_data in zip(label_loader, unlabeled_loader):
 
@@ -111,14 +112,13 @@ def bi_train(model, label_loader, unlabeled_loader, val_loader, test_loader, opt
 
         weight = wnet(out.softmax(1)[len(l_labels):])
         norm = torch.sum(weight)
-        if norm != 0:
-            loss_out = torch.sum(cost_w * weight) / weight
-        else:
-            loss_out = torch.sum(cost_w * weight)
 
         cls_loss = F.cross_entropy(out, labels, reduction='none', ignore_index=-1).mean()
+        if norm != 0:
+            loss_hat = cls_loss + coef * (torch.sum(cost_w * weight) / norm + ssl_loss[:len(l_labels)].mean())
+        else:
+            loss_hat = cls_loss + coef * (torch.sum(cost_w * weight) + ssl_loss[:len(l_labels)].mean())
 
-        loss_hat = cls_loss + coef * (loss_out + ssl_loss[:len(l_labels)].mean())
         meta_net.zero_grad()
         grads = torch.autograd.grad(loss_hat, (meta_net.params()), create_graph=True)
         meta_net.update_params(lr_inner=args.meta_lr, source_params=grads)
@@ -140,12 +140,11 @@ def bi_train(model, label_loader, unlabeled_loader, val_loader, test_loader, opt
         with torch.no_grad():
             weight = wnet(out.softmax(1)[len(l_labels):])
             norm = torch.sum(weight)
-            if norm != 0:
-                loss_out = torch.sum(cost_w * weight) / norm
-            else:
-                loss_out = torch.sum(cost_w * weight)
 
-        loss = cls_loss + coef * (loss_out + ssl_loss[:len(l_labels)].mean())
+        if norm != 0:
+            loss = cls_loss + coef * (torch.sum(cost_w * weight) / norm + ssl_loss[:len(l_labels)].mean())
+        else:
+            loss = cls_loss + coef * (torch.sum(cost_w * weight) + ssl_loss[:len(l_labels)].mean())
 
         optimizer.zero_grad()
         loss.backward()
