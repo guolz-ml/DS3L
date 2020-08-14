@@ -30,7 +30,7 @@ parser.add_argument('--lr_decay_iter', type=int, default=400000)
 parser.add_argument('--lr_decay_factor', type=float, default=0.2)
 parser.add_argument('--warmup', type=int, default=200000)
 parser.add_argument('--meta_lr', type=float, default=0.001)
-parser.add_argument('--lr_wnet', type=float, default=0.001) # this parameter need to be carefully tuned for different settings
+parser.add_argument('--lr_wnet', type=float, default=6e-4) # this parameter need to be carefully tuned for different settings
 
 #dataset
 parser.add_argument('--dataset', default='MNIST')
