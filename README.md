@@ -9,8 +9,6 @@ The code is implemented with Python and Pytorch.
 
 Here is an example:
 
-python train.py --dataset MNIST --ratio 0.6 --n_labels 60 --iterations 200000
-
 ```bash
 python train.py --dataset MNIST --ratio 0.6 --n_labels 60 --iterations 200000
 ```
